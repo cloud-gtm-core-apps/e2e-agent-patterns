@@ -32,6 +32,6 @@ jobs:
       - name: 'Deploy to Cloud Run'
         run: |
           gcloud run deploy e2e-agent-service \
-            --image gcr.io/genai-apps-25/agent-image:latest \
+            --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
             --region us-central1 \
             --platform managed
