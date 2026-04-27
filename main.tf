@@ -16,7 +16,15 @@ module "gh_oidc" {
   attribute_condition = "assertion.repository_owner == 'cloud-gtm-core-apps'"
 }
 
-# 2. The IAM Binding (The "Permissions" link)
+# 2. Enable Cloud Run API
+resource "google_project_service" "run_api" {
+  project = "genai-apps-25"
+  service = "run.googleapis.com"
+
+  disable_on_destroy = false
+}
+
+# 3. The IAM Binding (The "Permissions" link)
 resource "google_service_account_iam_member" "wif_binding" {
   # Your specific service account
   service_account_id = "projects/genai-apps-25/serviceAccounts/803095609412-compute@developer.gserviceaccount.com"
