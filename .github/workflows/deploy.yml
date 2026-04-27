@@ -1,0 +1,37 @@
+name: OIDC Cloud Run Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: 'read'
+  id-token: 'write' # Mandatory for the handshake
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          # Constructed using your Project Number and Pool ID
+          workload_identity_provider: 'projects/803095609412/locations/global/workloadIdentityPools/aaa-github-pool/providers/github-provider'
+          service_account: '803095609412-compute@developer.gserviceaccount.com'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: 'Verify Authentication'
+        run: 'gcloud auth list'
+
+      - name: 'Deploy to Cloud Run'
+        run: |
+          gcloud run deploy e2e-agent-service \
+            --image gcr.io/genai-apps-25/agent-image:latest \
+            --region us-central1 \
+            --platform managed
