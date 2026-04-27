@@ -36,4 +36,5 @@ jobs:
             --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
             --region us-central1 \
             --platform managed \
-            --project genai-apps-25
+            --project genai-apps-25 \
+            --iap
