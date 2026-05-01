@@ -12,5 +12,3 @@ graph TD
     E -->|Authorizes| F["Cloud Services<br/>AWS/GCP/Azure"]
     F -->|Executes Actions| G["Deployment/Infrastructure"]
 ```
-
-![GitHub Actions Workload Identity Federation](./github-actions-wif.png)
