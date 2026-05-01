@@ -5,7 +5,6 @@ module "gh_oidc" {
   pool_id     = "aaa-github-pool"
   provider_id = "github-provider"
   
-  # DO NOT CHANGE THESE VALUES - They are the translation instructions
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
