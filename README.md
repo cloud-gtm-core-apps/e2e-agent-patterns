@@ -3,7 +3,7 @@
 ## Github Actions Architecture Diagram
 
 ```mermaid
-graph LR
+graph TD
     A["GitHub Repository"] -->|Triggers| B["GitHub Actions Workflow"]
     B -->|Requests Token| C["GitHub Token Service"]
     C -->|Issues OIDC Token| B
