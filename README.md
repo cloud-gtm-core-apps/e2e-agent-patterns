@@ -2,6 +2,7 @@
 
 ## Github Actions Architecture Diagram
 
+```mermaid
 graph LR
     A["GitHub Repository"] -->|Triggers| B["GitHub Actions Workflow"]
     B -->|Requests Token| C["GitHub Token Service"]
@@ -10,5 +11,6 @@ graph LR
     D -->|Validates & Returns<br/>Access Token| E["Cloud Provider<br/>Credentials"]
     E -->|Authorizes| F["Cloud Services<br/>AWS/GCP/Azure"]
     F -->|Executes Actions| G["Deployment/Infrastructure"]
+```
 
 ![GitHub Actions Workload Identity Federation](./github-actions-wif.png)
