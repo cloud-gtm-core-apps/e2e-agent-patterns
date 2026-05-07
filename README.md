@@ -1,5 +1,3 @@
-# e2e-agent-patterns
-
 ## Github Actions Architecture Diagram
 
 ```mermaid
