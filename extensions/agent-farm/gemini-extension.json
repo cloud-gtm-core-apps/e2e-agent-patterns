@@ -1,0 +1,25 @@
+{
+  "name": "agent-farm",
+  "version": "1.1.0",
+  "contextFileName": "GEMINI.md",
+  "settings": [
+    {
+      "name": "GitHub Personal Access Token",
+      "description": "GitHub Personal Access Token with Repo permissions for the MCP server.",
+      "envVar": "GITHUB_PERSONAL_ACCESS_TOKEN",
+      "sensitive": true
+    }
+  ],
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    }
+  }
+}

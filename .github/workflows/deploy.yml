@@ -29,12 +29,36 @@ jobs:
 
       - name: 'Verify Authentication'
         run: 'gcloud auth list'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: 'Deploy to Cloud Run'
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Link Hub Extension
         run: |
-          gcloud run deploy e2e-agent-service \
-            --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
-            --region us-central1 \
-            --platform managed \
-            --project genai-apps-25 \
-            --iap
+          mkdir -p ~/.gemini .agentfarm/
+          echo '{"projects":{}}' > ~/.gemini/projects.json
+          echo "${{ steps.app-token.outputs.token }}" | gemini extensions link ./extensions/agent-farm --consent
+
+      - name: Run PR Auto-Review Command
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GOOGLE_GENAI_USE_VERTEXAI: 'true'
+          GOOGLE_CLOUD_LOCATION: ${{ vars.GCP_VERTEX_LOCATION || 'global' }}
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_VERTEX_PROJECT_ID || vars.GCP_PROJECT_ID }}
+        run: |
+          gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y
+
+      # - name: 'Deploy to Cloud Run'
+      #   run: |
+      #     gcloud run deploy e2e-agent-service \
+      #       --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
+      #       --region us-central1 \
+      #       --platform managed \
+      #       --project genai-apps-25 \
+      #       --iap
