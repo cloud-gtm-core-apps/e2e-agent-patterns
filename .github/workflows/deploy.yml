@@ -23,13 +23,6 @@ jobs:
           workload_identity_provider: 'projects/803095609412/locations/global/workloadIdentityPools/aaa-github-pool/providers/github-provider'
           service_account: '803095609412-compute@developer.gserviceaccount.com'
           project_id: 'genai-apps-25'
-      # - name: Generate GitHub App Token
-      #   id: app-token
-      #   uses: actions/create-github-app-token@v1
-      #   with:
-      #     app-id: ${{ secrets.BOT_APP_ID }}
-      #     private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
-
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
 
@@ -49,16 +42,34 @@ jobs:
           echo '{"projects":{}}' > ~/.gemini/projects.json
           echo "${{ steps.app-token.outputs.token }}" | gemini extensions link ./extensions/agent-farm --consent
 
-      - name: Run PR Auto-Review Command
+      - name: Gemini Security Scan
         env:
-          # GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
-          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          # GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GOOGLE_GENAI_USE_VERTEXAI: 'true'
+          GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
+        run: |
+          gemini extensions install https://github.com/gemini-cli-extensions/security --consent
+          gemini -p "/security:analyze" -y
+
+      - name: Run PR Auto-Review Command
+        if: github.event.pull_request.number
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GOOGLE_GENAI_USE_VERTEXAI: 'true'
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
         run: |
           gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y
+
+      - name: 'GCP PII Scan'
+        run: |
+          echo "Scanning for PII (Email, Phone, etc.)..."
+          # Scan common files in the repository for sensitive info types using Cloud DLP
+          find . -maxdepth 2 -not -path '*/.*' -type f \( -name "*.tf" -o -name "*.yml" -o -name "*.md" -o -name "*.sh" \) \
+            -exec gcloud dlp content inspect --info-types=EMAIL_ADDRESS,PHONE_NUMBER,LOCATION --path={} \;
 
       # - name: 'Deploy to Cloud Run'
       #   run: |
