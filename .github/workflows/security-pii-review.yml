@@ -87,7 +87,7 @@ jobs:
         run: |
           echo "Scanning for PII (Email, Phone, etc.)..."
           # Scan common files in the repository for sensitive info types using Cloud DLP alpha
-          find . -maxdepth 2 -not -path '*/.*' -type f \( -name "*.tf" -o -name "*.yml" -o -name "*.md" -o -name "*.sh" \) | while read file; do
+          find . -type f -not -path '*/.*' -not -path './reports/*' \( -name "*.tf" -o -name "*.yml" -o -name "*.yaml" -o -name "*.md" -o -name "*.sh" -o -name "*.py" -o -name "*.json" -o -name "*.toml" -o -name "*.html" \) | while read file; do
             echo "Scanning $file..." | tee -a reports/pii-scan.txt
             CONTENT=$(cat "$file")
             if [ ! -z "$CONTENT" ]; then
