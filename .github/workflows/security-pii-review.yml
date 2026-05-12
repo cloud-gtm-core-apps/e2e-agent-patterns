@@ -3,7 +3,7 @@ name: OIDC Cloud Run Deployment
 on:
   push:
     branches: [ main ]
-  pull_request:
+  pull_request: # trigger
     types:
       - opened
       - synchronize
@@ -63,7 +63,7 @@ jobs:
           gemini -p "/security:analyze" -y | tee reports/security-scan.txt
 
       - name: Run PR Auto-Review Command
-        if: github.event.pull_request.number
+        if: github.event.pull_request.number #should only execute if pr number exist
         env:
           GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.G_PAT_TOKEN }}
           GH_TOKEN: ${{ secrets.G_PAT_TOKEN }}
