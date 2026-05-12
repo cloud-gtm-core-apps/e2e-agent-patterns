@@ -138,7 +138,7 @@ jobs:
           fi
           echo "Quality Gate Passed!"
 
-  deploy:
+  build:
     needs: scan-and-evaluate
     runs-on: ubuntu-latest
     environment: production
@@ -154,10 +154,13 @@ jobs:
           workload_identity_provider: 'projects/803095609412/locations/global/workloadIdentityPools/aaa-github-pool/providers/github-provider'
           service_account: '803095609412-compute@developer.gserviceaccount.com'
           project_id: 'genai-apps-25'
-      - name: 'Deploy to Cloud Run'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: 'Submit Cloud Build'
         run: |
-          gcloud run deploy e2e-agent-service \
-            --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
-            --region us-central1 \
-            --platform managed \
-            --project genai-apps-25
+          gcloud builds submit \
+            --config .cloudbuild/cloudbuild-django.yaml \
+            --project genai-apps-25 \
+            .
