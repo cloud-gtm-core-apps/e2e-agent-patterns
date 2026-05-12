@@ -32,3 +32,19 @@ resource "google_service_account_iam_member" "wif_binding" {
   # Locked specifically to your repository
   member = "principalSet://iam.googleapis.com/projects/803095609412/locations/global/workloadIdentityPools/aaa-github-pool/attribute.repository/cloud-gtm-core-apps/e2e-agent-patterns"
 }
+
+# 4. GCS Bucket for Scan Reports
+resource "google_storage_bucket" "scan_reports" {
+  name     = "genai-apps-25-scan-reports"
+  location = "US"
+  force_destroy = true
+
+  uniform_bucket_level_access = true
+}
+
+# 5. IAM for Storage
+resource "google_storage_bucket_iam_member" "storage_admin" {
+  bucket = google_storage_bucket.scan_reports.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:803095609412-compute@developer.gserviceaccount.com"
+}

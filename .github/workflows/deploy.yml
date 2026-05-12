@@ -30,6 +30,10 @@ jobs:
 
       - name: 'Verify Authentication'
         run: 'gcloud auth list'
+
+      - name: 'Create Reports Directory'
+        run: mkdir -p reports
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,7 +56,7 @@ jobs:
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
         run: |
           gemini extensions install https://github.com/gemini-cli-extensions/security --consent
-          gemini -p "/security:analyze" -y
+          gemini -p "/security:analyze" -y | tee reports/security-scan.txt
 
       - name: Run PR Auto-Review Command
         if: github.event.pull_request.number
@@ -64,19 +68,25 @@ jobs:
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
         run: |
-          gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y
+          gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y | tee reports/pr-review.txt
 
       - name: 'GCP PII Scan'
         run: |
           echo "Scanning for PII (Email, Phone, etc.)..."
           # Scan common files in the repository for sensitive info types using Cloud DLP alpha
           find . -maxdepth 2 -not -path '*/.*' -type f \( -name "*.tf" -o -name "*.yml" -o -name "*.md" -o -name "*.sh" \) | while read file; do
-            echo "Scanning $file..."
+            echo "Scanning $file..." | tee -a reports/pii-scan.txt
             CONTENT=$(cat "$file")
             if [ ! -z "$CONTENT" ]; then
-              gcloud alpha dlp text inspect --info-types=EMAIL_ADDRESS,PHONE_NUMBER,LOCATION --content="$CONTENT" --format="json"
+              gcloud alpha dlp text inspect --info-types=EMAIL_ADDRESS,PHONE_NUMBER,LOCATION --content="$CONTENT" --format="json" | tee -a reports/pii-scan.txt
             fi
           done
+
+      - name: 'Upload Reports to GCS'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+          path: 'reports'
+          destination: 'genai-apps-25-scan-reports/${{ github.run_id }}_${{ github.run_attempt }}'
 
       # - name: 'Deploy to Cloud Run'
       #   run: |
