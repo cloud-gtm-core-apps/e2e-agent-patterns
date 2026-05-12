@@ -1,4 +1,4 @@
-name: OIDC Cloud Run Deployment
+name: Security PII and Code Review
 
 on:
   push:
