@@ -5,7 +5,7 @@
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
-
+tfplan
 # .terraform.lock.hcl
 # .terraform.lock.hcl is usually committed to ensure consistent provider versions, 
 # but I will include it here if you specifically want to ignore it. 

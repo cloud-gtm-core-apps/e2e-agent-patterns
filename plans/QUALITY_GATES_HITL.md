@@ -27,9 +27,10 @@ Add a step in your workflow that aggregates reports and uses Gemini to evaluate 
           # Gemini Evaluation
           gemini -p "Act as a Release Engineer. Review this combined report. 
           Quality Gate Criteria:
-          1. Zero 'High' severity security vulnerabilities.
+          1. Zero 'High' severity security vulnerabilities in source code.
           2. Zero PII leaks (emails/phones).
-          3. Coverage analysis must not identify 'Critical' missing tests.
+          3. Zero 'High' or 'Critical' vulnerabilities in third-party packages (SCA).
+          4. PR reviews must not identify 'Critical' missing tests or architectural flaws.
           
           If the criteria are met, output 'GATE_PASSED'. 
           If any fail, output 'GATE_FAILED' followed by a bulleted list of reasons. 
