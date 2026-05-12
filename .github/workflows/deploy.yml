@@ -25,6 +25,8 @@ jobs:
           project_id: 'genai-apps-25'
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          install_components: 'alpha'
 
       - name: 'Verify Authentication'
         run: 'gcloud auth list'
@@ -67,9 +69,14 @@ jobs:
       - name: 'GCP PII Scan'
         run: |
           echo "Scanning for PII (Email, Phone, etc.)..."
-          # Scan common files in the repository for sensitive info types using Cloud DLP
-          find . -maxdepth 2 -not -path '*/.*' -type f \( -name "*.tf" -o -name "*.yml" -o -name "*.md" -o -name "*.sh" \) \
-            -exec gcloud dlp content inspect --info-types=EMAIL_ADDRESS,PHONE_NUMBER,LOCATION --path={} \;
+          # Scan common files in the repository for sensitive info types using Cloud DLP alpha
+          find . -maxdepth 2 -not -path '*/.*' -type f \( -name "*.tf" -o -name "*.yml" -o -name "*.md" -o -name "*.sh" \) | while read file; do
+            echo "Scanning $file..."
+            CONTENT=$(cat "$file")
+            if [ ! -z "$CONTENT" ]; then
+              gcloud alpha dlp text inspect --info-types=EMAIL_ADDRESS,PHONE_NUMBER,LOCATION --content="$CONTENT" --format="json"
+            fi
+          done
 
       # - name: 'Deploy to Cloud Run'
       #   run: |
