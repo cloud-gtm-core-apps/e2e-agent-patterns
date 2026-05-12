@@ -24,6 +24,13 @@ jobs:
           service_account: '803095609412-compute@developer.gserviceaccount.com'
           project_id: 'genai-apps-25'
 
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
 
@@ -45,12 +52,12 @@ jobs:
 
       - name: Run PR Auto-Review Command
         env:
-          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GOOGLE_GENAI_USE_VERTEXAI: 'true'
-          GOOGLE_CLOUD_LOCATION: ${{ vars.GCP_VERTEX_LOCATION || 'global' }}
-          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_VERTEX_PROJECT_ID || vars.GCP_PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
         run: |
           gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y
 
