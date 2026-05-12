@@ -13,7 +13,7 @@ permissions:
   id-token: 'write' # Mandatory for the handshake
 
 jobs:
-  scan-source:
+  scan-and-evaluate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -50,11 +50,11 @@ jobs:
         run: |
           mkdir -p ~/.gemini .agentfarm/
           echo '{"projects":{}}' > ~/.gemini/projects.json
-          echo "${{ steps.app-token.outputs.token }}" | gemini extensions link ./extensions/agent-farm --consent
+          echo "${{ secrets.GITHUB_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
 
       - name: Gemini Security Scan
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOGLE_GENAI_USE_VERTEXAI: 'true'
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
@@ -86,11 +86,62 @@ jobs:
             fi
           done
 
+      - name: 'Quality Gate Decision'
+        env:
+          GOOGLE_GENAI_USE_VERTEXAI: 'true'
+          GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
+        run: |
+          # Aggregate reports
+          echo "### SECURITY SCAN ###" > final_report.txt
+          [ -f reports/security-scan.txt ] && cat reports/security-scan.txt >> final_report.txt || echo "Security scan report missing" >> final_report.txt
+          echo "### PII SCAN ###" >> final_report.txt
+          [ -f reports/pii-scan.txt ] && cat reports/pii-scan.txt >> final_report.txt || echo "PII scan report missing" >> final_report.txt
+          echo "### PR REVIEW ###" >> final_report.txt
+          [ -f reports/pr-review.txt ] && cat reports/pr-review.txt >> final_report.txt || echo "PR review report missing (not a PR?)" >> final_report.txt
+
+          # Gemini Evaluation
+          gemini -p "Act as a Release Engineer. Review this combined report. 
+          Quality Gate Criteria:
+          1. Zero 'High' severity security vulnerabilities.
+          2. Zero PII leaks (emails/phones).
+          3. PR reviews should not have major blocking issues.
+          
+          If the criteria are met, output 'GATE_PASSED'. 
+          If any fail, output 'GATE_FAILED' followed by a bulleted list of reasons. 
+          REPORT CONTENT: $(cat final_report.txt)" -y | tee reports/decision.txt
+
       - name: 'Upload Reports to GCS'
         uses: 'google-github-actions/upload-cloud-storage@v2'
         with:
           path: 'reports'
           destination: 'genai-apps-25-scan-reports/${{ github.run_id }}_${{ github.run_attempt }}'
+
+      - name: 'Enforce Quality Gate'
+        run: |
+          if grep -q "GATE_FAILED" reports/decision.txt; then
+            echo "Quality Gate Failed!"
+            cat reports/decision.txt
+            exit 1
+          fi
+          echo "Quality Gate Passed!"
+
+  deploy:
+    needs: scan-and-evaluate
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/803095609412/locations/global/workloadIdentityPools/aaa-github-pool/providers/github-provider'
+          service_account: '803095609412-compute@developer.gserviceaccount.com'
+          project_id: 'genai-apps-25'
 
       # - name: 'Deploy to Cloud Run'
       #   run: |
@@ -98,5 +149,4 @@ jobs:
       #       --image us-central1-docker.pkg.dev/genai-apps-25/adk/fast-api-fe:latest \
       #       --region us-central1 \
       #       --platform managed \
-      #       --project genai-apps-25 \
-      #       --iap
+      #       --project genai-apps-25
