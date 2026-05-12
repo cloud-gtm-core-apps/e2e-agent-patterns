@@ -62,6 +62,15 @@ jobs:
           gemini extensions install https://github.com/gemini-cli-extensions/security --consent
           gemini -p "/security:analyze" -y | tee reports/security-scan.txt
 
+      - name: Gemini Dependency Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOGLE_GENAI_USE_VERTEXAI: 'true'
+          GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
+        run: |
+          gemini -p "/security:scan-deps" -y | tee reports/dependency-audit.txt
+
       - name: Run PR Auto-Review Command
         if: github.event.pull_request.number #should only execute if pr number exist
         env:
@@ -95,6 +104,8 @@ jobs:
           # Aggregate reports
           echo "### SECURITY SCAN ###" > final_report.txt
           [ -f reports/security-scan.txt ] && cat reports/security-scan.txt >> final_report.txt || echo "Security scan report missing" >> final_report.txt
+          echo "### DEPENDENCY AUDIT ###" >> final_report.txt
+          [ -f reports/dependency-audit.txt ] && cat reports/dependency-audit.txt >> final_report.txt || echo "Dependency audit report missing" >> final_report.txt
           echo "### PII SCAN ###" >> final_report.txt
           [ -f reports/pii-scan.txt ] && cat reports/pii-scan.txt >> final_report.txt || echo "PII scan report missing" >> final_report.txt
           echo "### PR REVIEW ###" >> final_report.txt
@@ -106,6 +117,7 @@ jobs:
           1. Zero 'High' severity security vulnerabilities.
           2. Zero PII leaks (emails/phones).
           3. PR reviews should not have major blocking issues.
+          4. Zero 'High' or 'Critical' vulnerabilities in third-party packages (SCA/Dependencies).
           
           If the criteria are met, output 'GATE_PASSED'. 
           If any fail, output 'GATE_FAILED' followed by a bulleted list of reasons. 
