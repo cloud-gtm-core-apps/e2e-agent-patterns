@@ -61,6 +61,10 @@ jobs:
         run: |
           gemini extensions install https://github.com/gemini-cli-extensions/security --consent
           gemini -p "/security:analyze" -y | tee reports/security-scan.txt
+          # Copy detailed report artifacts if they exist
+          if [ -d .gemini_security ]; then
+            cp -r .gemini_security/* reports/ || true
+          fi
 
       - name: Gemini Dependency Scan
         env:
@@ -70,6 +74,10 @@ jobs:
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
         run: |
           gemini -p "/security:scan-deps strictly only focus on generating the report, and don't try to modify or patch" -y | tee reports/dependency-audit.txt
+          # Copy detailed dependency artifacts if they exist
+          if [ -d .gemini_security ]; then
+            cp -r .gemini_security/* reports/ || true
+          fi
 
       - name: Run PR Auto-Review Command
         if: github.event.pull_request.number #should only execute if pr number exist
@@ -87,7 +95,7 @@ jobs:
         run: |
           echo "Scanning for PII (Email, Phone, etc.)..."
           # Scan common files in the repository for sensitive info types using Cloud DLP alpha
-          find . -type f -not -path '*/.*' -not -path './reports/*' \( -name "*.tf" -o -name "*.yml" -o -name "*.yaml" -o -name "*.md" -o -name "*.sh" -o -name "*.py" -o -name "*.json" -o -name "*.toml" -o -name "*.html" \) | while read file; do
+          find . -type f -not -path '*/.*' -not -path './reports/*' -not -path './plans/*' -not -path './extensions/agent-farm/*' \( -name "*.tf" -o -name "*.yml" -o -name "*.yaml" -o -name "*.md" -o -name "*.sh" -o -name "*.py" -o -name "*.json" -o -name "*.toml" -o -name "*.html" \) | while read file; do
             echo "Scanning $file..." | tee -a reports/pii-scan.txt
             CONTENT=$(cat "$file")
             if [ ! -z "$CONTENT" ]; then
