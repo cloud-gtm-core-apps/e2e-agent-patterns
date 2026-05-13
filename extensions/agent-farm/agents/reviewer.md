@@ -9,9 +9,10 @@ tools:
   - glob
   - grep_search
   - activate_skill
-  - add_comment_to_pending_review
-  - pull_request_read
-  - request_review_write
+  - mcp_github_search_issues
+  - mcp_github_add_comment_to_pending_review
+  - mcp_github_pull_request_read
+  - mcp_github_pull_request_review_write
 model: gemini-3.1-pro-preview
 max_turns: 40
 timeout_mins: 20
