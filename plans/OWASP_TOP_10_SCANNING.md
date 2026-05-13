@@ -31,12 +31,30 @@ The Gemini Security Extension isn't just one tool; it's a three-layer pipeline t
     - **Source:** Google's technical engine.
     - **Function:** Efficiently crawls your project, identifies exact package versions, and cross-references them with OSV.dev.
 3.  **Layer 3: Analysis (Gemini LLM)**
-    - **Source:** Gemini 1.5 Flash/Pro.
+    - **Source:** Gemini 3.0 Flash/Pro.
     - **Function:** Takes the technical vulnerability report and "translates" it. It explains the risk and **writes the specific code patch** (e.g., updating a Dockerfile or package.json) to resolve the issue.
 
 ---
 
-## 4. Implementation Pattern (CI/CD)
+## 4. Gemini Dependency Scan
+The Gemini Dependency Scan (via the `/security:scan-deps` command) is an AI-powered analyzer that goes beyond static vulnerability matching. It uses the Gemini LLM to reason about dependency graphs and provide context-aware remediation.
+
+- **Capabilities**:
+    - **Contextual Risk Analysis**: Evaluates if a vulnerable package is actually being used in a risky way within your codebase.
+    - **Direct Remediation**: Generates precise code patches for `package.json`, `requirements.txt`, or `Dockerfile`.
+    - **Dependency Graph Reasoning**: Identifies transitive dependencies that are causing issues.
+- **CLI Command**:
+  ```bash
+  gemini -p "/security:scan-deps"
+  ```
+- **Prerequisites**: Requires the Gemini Security Extension.
+  ```bash
+  gemini extensions install https://github.com/gemini-cli-extensions/security --consent
+  ```
+
+---
+
+## 5. Implementation Pattern (CI/CD)
 
 ### Step A: Pre-Build Filesystem Scan (Shift-Left)
 Scan the repository source code and dependency lockfiles *before* the Docker image is built.
@@ -79,7 +97,7 @@ All SCA reports are aggregated into the final report for Gemini evaluation.
 
 ---
 
-## 5. AI-Assisted Investigation & Remediation (Local)
+## 6. AI-Assisted Investigation & Remediation (Local)
 
 To accelerate the "Fix" phase, developers can use the **Trivy MCP Server** to give AI assistants direct visibility into the vulnerability state.
 
@@ -99,7 +117,7 @@ trivy mcp
 
 ---
 
-## 6. Standard Remediation Workflow
+## 7. Standard Remediation Workflow
 1. **Identify**: Trivy or Gemini flags a vulnerability.
 2. **Analyze**: The Quality Gate fails with specific CVE details.
 3. **Fix**: Use AI-assisted patching to update `Dockerfile` or dependency lockfiles.

@@ -21,3 +21,6 @@ tfplan
 
 # Ignore temp creds
 gha-creds-*
+
+#ignore mcp toolbox cmd binary
+mcp-servers/mcp-toolbox/toolbox
