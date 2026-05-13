@@ -22,6 +22,9 @@
         "ghcr.io/github/github-mcp-server:v0.27.0"
       ],
       "includeTools": [
+        "get_me",
+        "get_repository",
+        "search_issues",
         "add_comment_to_pending_review",
         "pull_request_read",
         "pull_request_review_write"
