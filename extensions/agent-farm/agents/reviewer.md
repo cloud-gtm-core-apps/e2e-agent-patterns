@@ -9,6 +9,7 @@ tools:
   - glob
   - grep_search
   - activate_skill
+  - mcp_github_search_issues
   - mcp_github_add_comment_to_pending_review
   - mcp_github_pull_request_read
   - mcp_github_pull_request_review_write
