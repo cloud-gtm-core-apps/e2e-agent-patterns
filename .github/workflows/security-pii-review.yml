@@ -91,7 +91,7 @@ jobs:
 
       - name: Link Hub Extension
         run: |
-          mkdir -p ~/.gemini .agentfarm/
+          mkdir -p ~/.gemini .agentfarm/ .gemini/
           echo '{"projects":{}}' > ~/.gemini/projects.json
           echo "$GEMINI_SETTINGS" > ~/.gemini/settings.json
           echo "${{ secrets.GITHUB_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
