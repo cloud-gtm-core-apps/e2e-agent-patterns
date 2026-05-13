@@ -64,11 +64,11 @@ jobs:
           mkdir -p ~/.gemini .agentfarm/ .gemini/
           echo '{"projects":{}}' > ~/.gemini/projects.json
           echo "$GEMINI_SETTINGS" > ~/.gemini/settings.json
-          echo "${{ secrets.GITHUB_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
+          echo "${{ secrets.G_PAT_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
 
       - name: Gemini Security Scan
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.G_PAT_TOKEN }}
           GOOGLE_GENAI_USE_VERTEXAI: 'true'
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
@@ -82,7 +82,7 @@ jobs:
 
       - name: Gemini Dependency Scan
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.G_PAT_TOKEN }}
           GOOGLE_GENAI_USE_VERTEXAI: 'true'
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
