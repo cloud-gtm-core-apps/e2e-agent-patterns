@@ -14,6 +14,8 @@ permissions:
   pull-requests: 'write' # Added for automated review comments
 
 env:
+  APP_ID: ${{ secrets.APP_ID }}
+  APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
   GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}
   GOOGLE_CLOUD_PROJECT_NUMBER: ${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER || vars.GCP_PROJECT_NUMBER }}
   GOOGLE_GENAI_USE_VERTEXAI: 'true'
@@ -46,6 +48,13 @@ jobs:
           workload_identity_provider: 'projects/${{ env.GOOGLE_CLOUD_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/aaa-github-pool/providers/github-provider'
           service_account: '${{ env.GOOGLE_CLOUD_PROJECT_NUMBER }}-compute@developer.gserviceaccount.com'
           project_id: ${{ env.GOOGLE_CLOUD_PROJECT }}
+      - name: Generate GitHub App Token
+        if: env.APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ env.APP_PRIVATE_KEY }}
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
         with:
@@ -70,11 +79,11 @@ jobs:
           mkdir -p ~/.gemini .agentfarm/ .gemini/
           echo '{"projects":{}}' > ~/.gemini/projects.json
           echo "$GEMINI_SETTINGS" > ~/.gemini/settings.json
-          echo "${{ secrets.G_PAT_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
+          echo "${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}" | gemini extensions link ./extensions/agent-farm --consent
 
       - name: Gemini Security Scan
         env:
-          GITHUB_TOKEN: ${{ secrets.G_PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}
         run: |
           gemini extensions install https://github.com/gemini-cli-extensions/security --consent
           gemini -p "/security:analyze" -y | tee reports/security-scan.txt
@@ -85,7 +94,7 @@ jobs:
 
       - name: Gemini Dependency Scan
         env:
-          GITHUB_TOKEN: ${{ secrets.G_PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}
         run: |
           gemini -p "/security:scan-deps strictly only focus on generating the report, and don't try to modify or patch" -y | tee reports/dependency-audit.txt
           # Copy detailed dependency artifacts if they exist
@@ -96,9 +105,9 @@ jobs:
       - name: Run PR Auto-Review Command
         if: github.event.pull_request.number #should only execute if pr number exist
         env:
-          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.G_PAT_TOKEN }}
-          GH_TOKEN: ${{ secrets.G_PAT_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.G_PAT_TOKEN }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.G_PAT_TOKEN }}
         run: |
           gemini -p "@reviewer pull_request: ${{ github.event.pull_request.number }} max_reviews: 3" -y | tee reports/pr-review.txt
 
