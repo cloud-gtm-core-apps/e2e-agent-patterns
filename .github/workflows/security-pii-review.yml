@@ -11,6 +11,7 @@ on:
 permissions:
   contents: 'read'
   id-token: 'write' # Mandatory for the handshake
+  pull-requests: 'write' # Added for automated review comments
 
 env:
   GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT || vars.GCP_PROJECT_ID }}

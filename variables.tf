@@ -32,6 +32,11 @@ variable "repository_owners" {
   description = "List of GitHub organizations/users allowed to use this provider"
   type        = list(string)
   default     = ["cloud-gtm-core-apps", "ypenn21"]
+
+  validation {
+    condition     = length(var.repository_owners) > 0
+    error_message = "At least one repository owner must be specified to prevent insecure access."
+  }
 }
 
 variable "repositories" {
