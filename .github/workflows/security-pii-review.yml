@@ -17,6 +17,7 @@ env:
   GOOGLE_CLOUD_PROJECT_NUMBER: ${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER || vars.GCP_PROJECT_NUMBER }}
   GOOGLE_GENAI_USE_VERTEXAI: 'true'
   GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION || 'global' }}
+  GEMINI_MEMORY_MONITOR_INTERVAL: 60000
   GEMINI_SETTINGS: |-
     {
       "model": {
@@ -25,7 +26,8 @@ env:
       "telemetry": {
         "enabled": true,
         "target": "local",
-        "outfile": ".gemini/telemetry.log"
+        "outfile": ".gemini/telemetry.log",
+        "metricReaders": []
       }
     }
 
@@ -135,6 +137,13 @@ jobs:
           If the criteria are met, output 'GATE_PASSED'. 
           If any fail, output 'GATE_FAILED' followed by a bulleted list of reasons. 
           REPORT CONTENT: $(cat final_report.txt)" -y | tee reports/decision.txt
+
+      - name: 'Collect Telemetry Log'
+        if: always()
+        run: |
+          if [ -f .gemini/telemetry.log ]; then
+            cp .gemini/telemetry.log reports/
+          fi
 
       - name: 'Upload Reports to GCS'
         uses: 'google-github-actions/upload-cloud-storage@v2'
