@@ -27,8 +27,7 @@ env:
       "telemetry": {
         "enabled": true,
         "target": "local",
-        "outfile": ".gemini/telemetry.log",
-        "metricReaders": []
+        "outfile": ".gemini/telemetry.log"
       }
     }
 
